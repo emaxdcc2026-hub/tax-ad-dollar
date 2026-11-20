@@ -1,0 +1,987 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#059669">
+    <title>Tax Refund &amp; Dollar Conversion Calculator</title>
+    <style>
+        /* ==========================================================================
+           Design Tokens & Reset
+           ========================================================================== */
+        :root {
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-subtle: #f1f5f9;
+            --border-color: #e2e8f0;
+            --border-strong: #cbd5e1;
+
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+
+            /* Emerald Green Accent (#059669) */
+            --emerald-50: #ecfdf5;
+            --emerald-100: #d1fae5;
+            --emerald-200: #a7f3d0;
+            --emerald-600: #059669;
+            --emerald-700: #047857;
+            --emerald-900: #064e3b;
+
+            /* Deep Blue Accent (#2563eb) */
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-200: #bfdbfe;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --blue-900: #1e3a8a;
+
+            --radius-xl: 18px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+
+            --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 20px -6px rgba(15, 23, 42, 0.06);
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-family: var(--font-sans);
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            line-height: 1.5;
+        }
+
+        /* Prevent horizontal digit jitter while typing */
+        .tabular {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ==========================================================================
+           Sticky Top Header
+           ========================================================================== */
+        .app-header {
+            background-color: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .header-inner {
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--emerald-600), #0d9488);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+        }
+
+        .brand-title {
+            font-size: 1.0625rem;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .brand-subtitle {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .btn-reset-all {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 14px;
+            font-family: inherit;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background-color: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-reset-all:hover {
+            background-color: #e2e8f0;
+            color: var(--text-primary);
+        }
+
+        .btn-reset-all:active {
+            transform: scale(0.97);
+        }
+
+        /* ==========================================================================
+           Main Layout & Calculator Sections
+           ========================================================================== */
+        .main-container {
+            width: 100%;
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 28px 20px 36px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            flex-grow: 1;
+        }
+
+        .calc-section {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--bg-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .section-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-badge--emerald {
+            background-color: var(--emerald-100);
+            color: var(--emerald-700);
+        }
+
+        .step-badge--blue {
+            background-color: var(--blue-100);
+            color: var(--blue-700);
+        }
+
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .section-hint {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ==========================================================================
+           Side-by-Side Display Boxes Grid
+           ========================================================================== */
+        .boxes-grid {
+            padding: 22px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        @media (max-width: 560px) {
+            .boxes-grid {
+                grid-template-columns: 1fr;
+                padding: 16px;
+                gap: 14px;
+            }
+            .section-header {
+                padding: 14px 16px;
+            }
+            .main-container {
+                padding: 18px 14px 28px;
+            }
+        }
+
+        .display-box {
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 205px;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        /* Input Display Boxes */
+        .input-box {
+            background-color: #ffffff;
+            border: 2px solid var(--border-color);
+        }
+
+        .input-box--emerald:focus-within {
+            border-color: var(--emerald-600);
+            box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
+        }
+
+        .input-box--blue:focus-within {
+            border-color: var(--blue-600);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Output Display Boxes */
+        .output-box--emerald {
+            background: linear-gradient(145deg, var(--emerald-50), #f0fdfa);
+            border: 1px solid var(--emerald-200);
+        }
+
+        .output-box--blue {
+            background: linear-gradient(145deg, var(--blue-50), #eef2ff);
+            border: 1px solid var(--blue-200);
+        }
+
+        /* Top Bar inside Display Box */
+        .box-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .box-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .output-box--emerald .box-label {
+            color: var(--emerald-900);
+        }
+
+        .output-box--blue .box-label {
+            color: var(--blue-900);
+        }
+
+        .formula-badge {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+            background-color: var(--bg-subtle);
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .formula-badge--emerald {
+            background-color: var(--emerald-100);
+            color: var(--emerald-900);
+        }
+
+        .formula-badge--blue {
+            background-color: var(--blue-100);
+            color: var(--blue-900);
+        }
+
+        /* Large Numeric Input & Output Row */
+        .value-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin: 8px 0;
+        }
+
+        .currency-prefix {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--blue-600);
+            user-select: none;
+        }
+
+        .currency-suffix {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .numeric-input {
+            width: 100%;
+            min-width: 0;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: clamp(1.7rem, 3.2vw, 2.25rem);
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+        }
+
+        .numeric-input::placeholder {
+            color: #cbd5e1;
+        }
+
+        /* Hide native browser number spinners */
+        .numeric-input::-webkit-outer-spin-button,
+        .numeric-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .numeric-input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .output-value {
+            font-size: clamp(1.7rem, 3.2vw, 2.25rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .output-box--emerald .output-value {
+            color: var(--emerald-900);
+        }
+
+        .output-box--blue .output-value {
+            color: var(--blue-900);
+        }
+
+        /* Quick-Fill Preset Buttons */
+        .preset-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .preset-btn {
+            padding: 5px 10px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background-color: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .preset-btn:hover {
+            background-color: var(--emerald-50);
+            border-color: var(--emerald-200);
+            color: var(--emerald-700);
+        }
+
+        .preset-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Breakdown Box inside Tax Refund Output */
+        .breakdown-panel {
+            margin-top: 6px;
+            padding: 8px 10px;
+            background-color: rgba(255, 255, 255, 0.65);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 0.77rem;
+            color: var(--emerald-900);
+        }
+
+        .breakdown-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .breakdown-line strong {
+            font-weight: 700;
+        }
+
+        /* Footer Row inside Display Boxes */
+        .box-footer {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(15, 23, 42, 0.07);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            min-height: 36px;
+        }
+
+        /* Action Buttons */
+        .btn-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 11px;
+            font-family: inherit;
+            font-size: 0.76rem;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+            white-space: nowrap;
+        }
+
+        .btn-sm:active {
+            transform: scale(0.97);
+        }
+
+        .btn-clear {
+            background-color: var(--bg-subtle);
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+
+        .btn-clear:hover {
+            background-color: #e2e8f0;
+            color: var(--text-primary);
+        }
+
+        .btn-copy-emerald {
+            background-color: rgba(16, 185, 129, 0.16);
+            color: var(--emerald-900);
+        }
+
+        .btn-copy-emerald:hover {
+            background-color: rgba(16, 185, 129, 0.26);
+        }
+
+        .btn-transfer {
+            background-color: var(--emerald-600);
+            color: #ffffff;
+            box-shadow: 0 1px 3px rgba(6, 78, 59, 0.22);
+        }
+
+        .btn-transfer:hover {
+            background-color: var(--emerald-700);
+        }
+
+        .btn-copy-blue {
+            background-color: rgba(37, 99, 235, 0.13);
+            color: var(--blue-900);
+        }
+
+        .btn-copy-blue:hover {
+            background-color: rgba(37, 99, 235, 0.22);
+        }
+
+        .output-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            width: 100%;
+            justify-content: flex-end;
+        }
+
+        /* ==========================================================================
+           Footer & Status Toast
+           ========================================================================== */
+        .app-footer {
+            max-width: 920px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 16px 20px 24px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 50;
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(16px);
+            pointer-events: none;
+            transition: opacity 0.22s ease, transform 0.22s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sticky Top Header -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                        <line x1="8" y1="10" x2="8.01" y2="10"></line>
+                        <line x1="12" y1="10" x2="12.01" y2="10"></line>
+                        <line x1="16" y1="10" x2="16.01" y2="10"></line>
+                        <line x1="8" y1="14" x2="8.01" y2="14"></line>
+                        <line x1="12" y1="14" x2="12.01" y2="14"></line>
+                        <line x1="16" y1="14" x2="16.01" y2="14"></line>
+                        <line x1="8" y1="18" x2="12" y2="18"></line>
+                        <line x1="16" y1="18" x2="16.01" y2="18"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-title">Tax Refund &amp; Dollar Converter</h1>
+                    <p class="brand-subtitle">Instant UAE VAT Refund &amp; AED to USD Conversion</p>
+                </div>
+            </div>
+
+            <button type="button" id="resetAllBtn" class="btn-reset-all" title="Reset all inputs and outputs">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                </svg>
+                Reset All
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+
+        <!-- ================================================================
+             SECTION 1: TAX REFUND CALCULATOR
+             ================================================================ -->
+        <section class="calc-section" aria-labelledby="taxHeading">
+            <div class="section-header">
+                <div class="section-title-group">
+                    <span class="step-badge step-badge--emerald">1</span>
+                    <h2 id="taxHeading" class="section-title">Tax Refund Calculator</h2>
+                </div>
+                <span class="section-hint">Calculates 5% VAT &times; 81% Refundable Share</span>
+            </div>
+
+            <div class="boxes-grid">
+                <!-- Left Box: Purchase Amount -->
+                <div class="display-box input-box input-box--emerald">
+                    <div>
+                        <div class="box-top">
+                            <label for="purchaseInput" class="box-label">Purchase Amount</label>
+                            <span class="formula-badge">AED Input</span>
+                        </div>
+
+                        <div class="value-row">
+                            <input
+                                type="number"
+                                id="purchaseInput"
+                                class="numeric-input tabular"
+                                inputmode="decimal"
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                                autofocus
+                            >
+                            <span class="currency-suffix" aria-hidden="true">AED</span>
+                        </div>
+
+                        <div class="preset-row" aria-label="Quick-fill purchase presets">
+                            <button type="button" class="preset-btn tabular" data-preset="500">500</button>
+                            <button type="button" class="preset-btn tabular" data-preset="1000">1,000</button>
+                            <button type="button" class="preset-btn tabular" data-preset="2500">2,500</button>
+                            <button type="button" class="preset-btn tabular" data-preset="5000">5,000</button>
+                        </div>
+                    </div>
+
+                    <div class="box-footer">
+                        <span>Enter receipt amount</span>
+                        <button type="button" id="clearPurchaseBtn" class="btn-sm btn-clear">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Box: Tax Refund Total -->
+                <div class="display-box output-box--emerald">
+                    <div>
+                        <div class="box-top">
+                            <span class="box-label">Tax Refund Total</span>
+                            <span class="formula-badge formula-badge--emerald">Input &times; 5% &times; 81%</span>
+                        </div>
+
+                        <div class="value-row">
+                            <output id="refundOutput" for="purchaseInput" class="output-value tabular">0.00</output>
+                            <span class="currency-suffix" style="color: var(--emerald-700);" aria-hidden="true">AED</span>
+                        </div>
+
+                        <div class="breakdown-panel tabular">
+                            <div class="breakdown-line">
+                                <span>5% VAT Amount (Input &times; 0.05):</span>
+                                <strong><span id="vatAmountOutput">0.00</span> AED</strong>
+                            </div>
+                            <div class="breakdown-line">
+                                <span>81% Refundable Share (VAT &times; 0.81):</span>
+                                <strong><span id="refundShareOutput">0.00</span> AED</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="box-footer">
+                        <div class="output-actions">
+                            <button type="button" id="copyRefundBtn" class="btn-sm btn-copy-emerald">
+                                <span id="copyRefundLabel">Copy Refund</span>
+                            </button>
+                            <button type="button" id="sendToConverterBtn" class="btn-sm btn-transfer">
+                                Send to Dollar Converter &darr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             SECTION 2: DOLLAR CONVERSION CALCULATOR
+             ================================================================ -->
+        <section class="calc-section" aria-labelledby="dollarHeading">
+            <div class="section-header">
+                <div class="section-title-group">
+                    <span class="step-badge step-badge--blue">2</span>
+                    <h2 id="dollarHeading" class="section-title">Dollar Conversion Calculator</h2>
+                </div>
+                <span class="section-hint">Converts AED to US Dollars</span>
+            </div>
+
+            <div class="boxes-grid">
+                <!-- Left Box: Amount to Convert -->
+                <div class="display-box input-box input-box--blue">
+                    <div>
+                        <div class="box-top">
+                            <label for="localInput" class="box-label">Amount to Convert</label>
+                            <span class="formula-badge">AED Input</span>
+                        </div>
+
+                        <div class="value-row">
+                            <input
+                                type="number"
+                                id="localInput"
+                                class="numeric-input tabular"
+                                inputmode="decimal"
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                            >
+                            <span class="currency-suffix" aria-hidden="true">AED</span>
+                        </div>
+                    </div>
+
+                    <div class="box-footer">
+                        <span>Enter amount in AED</span>
+                        <button type="button" id="clearLocalBtn" class="btn-sm btn-clear">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Box: USD Total ($) -->
+                <div class="display-box output-box--blue">
+                    <div>
+                        <div class="box-top">
+                            <span class="box-label">USD Total ($)</span>
+                            <span class="formula-badge formula-badge--blue">Rate: 1 USD = 3.6 AED (Input &divide; 3.6)</span>
+                        </div>
+
+                        <div class="value-row">
+                            <span class="currency-prefix" aria-hidden="true">$</span>
+                            <output id="dollarOutput" for="localInput" class="output-value tabular">0.00</output>
+                        </div>
+                    </div>
+
+                    <div class="box-footer">
+                        <div class="output-actions">
+                            <button type="button" id="copyDollarBtn" class="btn-sm btn-copy-blue">
+                                <span id="copyDollarLabel">Copy USD</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        Tax Refund &amp; Dollar Conversion Calculator &bull; Self-Contained Offline Web App
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" role="status" aria-live="polite">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span id="toastText">Copied!</span>
+    </div>
+
+    <!-- ======================================================================
+         Application JavaScript
+         ====================================================================== -->
+    <script>
+        (function () {
+            'use strict';
+
+            // Section 1 Elements (Tax Refund)
+            const purchaseInput = document.getElementById('purchaseInput');
+            const presetButtons = document.querySelectorAll('[data-preset]');
+            const clearPurchaseBtn = document.getElementById('clearPurchaseBtn');
+            const refundOutput = document.getElementById('refundOutput');
+            const vatAmountOutput = document.getElementById('vatAmountOutput');
+            const refundShareOutput = document.getElementById('refundShareOutput');
+            const copyRefundBtn = document.getElementById('copyRefundBtn');
+            const copyRefundLabel = document.getElementById('copyRefundLabel');
+            const sendToConverterBtn = document.getElementById('sendToConverterBtn');
+
+            // Section 2 Elements (Dollar Conversion)
+            const localInput = document.getElementById('localInput');
+            const clearLocalBtn = document.getElementById('clearLocalBtn');
+            const dollarOutput = document.getElementById('dollarOutput');
+            const copyDollarBtn = document.getElementById('copyDollarBtn');
+            const copyDollarLabel = document.getElementById('copyDollarLabel');
+
+            // Header & Toast Elements
+            const resetAllBtn = document.getElementById('resetAllBtn');
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toastText');
+
+            let currentRefund = 0;
+            let currentUsd = 0;
+            let toastTimer = null;
+
+            /**
+             * Parse numeric input safely; returns 0 for empty, NaN, or negative values.
+             */
+            function parseSafeAmount(rawValue) {
+                const parsed = parseFloat(rawValue);
+                if (!Number.isFinite(parsed) || Number.isNaN(parsed) || parsed <= 0) {
+                    return 0;
+                }
+                return parsed;
+            }
+
+            /**
+             * Format a number to 2 decimal places with thousands separators.
+             */
+            function formatMoney(value) {
+                if (!Number.isFinite(value) || Number.isNaN(value) || value <= 0) {
+                    return '0.00';
+                }
+                return value.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            /**
+             * Show brief status toast message.
+             */
+            function showToast(message) {
+                toastText.textContent = message;
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function () {
+                    toast.classList.remove('show');
+                }, 2200);
+            }
+
+            /**
+             * Copy text to clipboard reliably across all browsers and sandboxed frames.
+             */
+            function copyValue(numericValue, labelEl, formattedToastText) {
+                const textToCopy = numericValue.toFixed(2);
+                const originalLabel = labelEl.textContent;
+
+                try {
+                    const helper = document.createElement('textarea');
+                    helper.value = textToCopy;
+                    helper.setAttribute('readonly', '');
+                    helper.style.position = 'fixed';
+                    helper.style.left = '-9999px';
+                    document.body.appendChild(helper);
+                    helper.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(helper);
+
+                    labelEl.textContent = 'Copied!';
+                    setTimeout(function () {
+                        labelEl.textContent = originalLabel;
+                    }, 1500);
+
+                    showToast('Copied ' + formattedToastText);
+                } catch (err) {
+                    showToast('Unable to copy');
+                }
+            }
+
+            /**
+             * Recalculate Tax Refund (Input Amount * 0.05 * 0.81) and breakdown values.
+             */
+            function updateTaxRefund() {
+                const inputAmount = parseSafeAmount(purchaseInput.value);
+                const vatAmount = inputAmount * 0.05;
+                const refundTotal = vatAmount * 0.81;
+
+                currentRefund = refundTotal;
+
+                refundOutput.textContent = formatMoney(refundTotal);
+                vatAmountOutput.textContent = formatMoney(vatAmount);
+                refundShareOutput.textContent = formatMoney(refundTotal);
+            }
+
+            /**
+             * Recalculate Dollar Conversion (Input Amount / 3.6).
+             */
+            function updateDollarConversion() {
+                const inputAmount = parseSafeAmount(localInput.value);
+                const usdTotal = inputAmount / 3.6;
+
+                currentUsd = usdTotal;
+
+                dollarOutput.textContent = formatMoney(usdTotal);
+            }
+
+            // Real-time input listeners
+            purchaseInput.addEventListener('input', updateTaxRefund);
+            localInput.addEventListener('input', updateDollarConversion);
+
+            // Quick-fill preset buttons
+            presetButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    purchaseInput.value = btn.getAttribute('data-preset');
+                    updateTaxRefund();
+                    purchaseInput.focus();
+                });
+            });
+
+            // Individual Clear buttons
+            clearPurchaseBtn.addEventListener('click', function () {
+                purchaseInput.value = '';
+                updateTaxRefund();
+                purchaseInput.focus();
+            });
+
+            clearLocalBtn.addEventListener('click', function () {
+                localInput.value = '';
+                updateDollarConversion();
+                localInput.focus();
+            });
+
+            // Copy buttons
+            copyRefundBtn.addEventListener('click', function () {
+                copyValue(currentRefund, copyRefundLabel, formatMoney(currentRefund) + ' AED');
+            });
+
+            copyDollarBtn.addEventListener('click', function () {
+                copyValue(currentUsd, copyDollarLabel, '$' + formatMoney(currentUsd));
+            });
+
+            // Transfer calculated refund total directly into Dollar Conversion input
+            sendToConverterBtn.addEventListener('click', function () {
+                if (currentRefund > 0) {
+                    localInput.value = currentRefund.toFixed(2);
+                    updateDollarConversion();
+                    showToast('Sent ' + formatMoney(currentRefund) + ' AED to Dollar Converter');
+                } else {
+                    purchaseInput.focus();
+                    showToast('Enter a purchase amount first');
+                }
+            });
+
+            // Global Reset All button
+            resetAllBtn.addEventListener('click', function () {
+                purchaseInput.value = '';
+                localInput.value = '';
+                updateTaxRefund();
+                updateDollarConversion();
+                purchaseInput.focus();
+                showToast('All fields reset');
+            });
+
+            // Initialize default display values
+            updateTaxRefund();
+            updateDollarConversion();
+        })();
+    </script>
+</body>
+</html>
+```
